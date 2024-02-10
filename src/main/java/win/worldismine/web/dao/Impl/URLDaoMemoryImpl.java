@@ -56,4 +56,9 @@ public class URLDaoMemoryImpl implements URLDao {
         }
         return res;
     }
+
+    @Override
+    synchronized public void deleteAllURL() {
+        idToURLObject.clear();
+    }
 }

@@ -9,8 +9,8 @@ import win.worldismine.web.util.ResponseObject;
 @RestController
 public class HealthController {
     @GetMapping("/ping")
-    public ResponseEntity<ResponseObject<Void>> getName() {
-        ResponseObject<Void> res = new ResponseObject<Void>();
+    public ResponseEntity<ResponseObject> getName() {
+        ResponseObject res = new ResponseObject();
         res.setCode(200);
         res.setMessage("ok");
         return new ResponseEntity<>(res, HttpStatus.OK);
