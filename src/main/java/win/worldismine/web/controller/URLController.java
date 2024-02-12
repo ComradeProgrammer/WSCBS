@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import win.worldismine.web.util.ResponseObject;
 
 import java.io.InputStream;
 import java.net.URI;
-
+@Slf4j
 @RestController
 public class URLController {
     @GetMapping("/{id}")
@@ -24,7 +25,7 @@ public class URLController {
         ResponseEntity<ResponseObject> response;
         if (res.getCode() == 301) {
             HttpHeaders responseHeaders = new HttpHeaders();
-            responseHeaders.setLocation(new URI(res.getValue()));
+            //responseHeaders.setLocation(new URI(res.getValue()));
             response = new ResponseEntity<>(res, responseHeaders, HttpStatus.resolve(res.getCode()));
         } else {
             response = new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));

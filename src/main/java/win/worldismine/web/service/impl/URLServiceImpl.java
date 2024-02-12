@@ -11,10 +11,7 @@ import win.worldismine.web.util.ResponseObject;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -137,7 +134,7 @@ public class URLServiceImpl implements URLService {
         ByteBuffer bb = ByteBuffer.wrap(new byte[8]);
         bb.putLong(uuid.getMostSignificantBits());
         //bb.putLong(uuid.getLeastSignificantBits());
-        return Base64.getUrlEncoder().encodeToString(bb.array());
+        return Base64.getUrlEncoder().encodeToString(Arrays.copyOf(bb.array(),4));
     }
 
     public ResponseObject deleteURLs() {
@@ -148,11 +145,9 @@ public class URLServiceImpl implements URLService {
         return res;
     }
 
-    private static final String regex = "^(https?)://[-a-zA-Z0-9;/?:@&=+$,_.!~*'()%]{1,255}[-a-zA-Z0-9;/?:@&=+$,_.!~*'()]";
 
-    private boolean checkURLValidity(String s) {
-        // url allows a-zA-Z0-9;/?:@&=+-$,_.!~*'()
-        Matcher matcher = Pattern.compile(regex).matcher(s);
+    synchronized private boolean checkURLValidity(String s) {
+        Matcher matcher = Pattern.compile("^(https?)://[-a-zA-Z0-9;/?:@&=+$,_.!~*'()%#]{1,255}[-a-zA-Z0-9;/?:@&=+$,_.!~*'()#]").matcher(s);
         return matcher.matches();
     }
 
