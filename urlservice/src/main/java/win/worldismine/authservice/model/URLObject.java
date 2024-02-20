@@ -6,4 +6,5 @@ import lombok.Data;
 public class URLObject {
     private String id;
     private String url;
+    private String creator;
 }

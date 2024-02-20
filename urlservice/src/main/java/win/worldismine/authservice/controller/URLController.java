@@ -19,8 +19,10 @@ import java.io.InputStream;
 @RestController
 public class URLController {
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseObject> GetURLByID(@PathVariable("id") String id) throws Exception {
-        ResponseObject res = urlService.getURLByID(id);
+    public ResponseEntity<ResponseObject> GetURLByID(@PathVariable("id") String id, HttpServletRequest request) throws Exception {
+
+        String auth=request.getHeader("Authorization");
+        ResponseObject res = urlService.getURLByID(id,auth);
 
         ResponseEntity<ResponseObject> response;
         if (res.getCode() == 301) {
@@ -42,6 +44,7 @@ public class URLController {
 
     @PutMapping(value = "/{id}")
     public ResponseEntity<ResponseObject> PutURLByID(@PathVariable("id") String id, HttpServletRequest request) throws Exception {
+        String auth=request.getHeader("Authorization");
         PutData obj;
         InputStream stream = request.getInputStream();
         try {
@@ -53,19 +56,21 @@ public class URLController {
             res.setMessage("invalid request body");
             return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
         }
-        ResponseObject res = urlService.setURLByID(id, obj.getUrl());
+        ResponseObject res = urlService.setURLByID(id, obj.getUrl(),auth);
         return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseObject> DeleteURLByID(@PathVariable("id") String id) {
-        ResponseObject res = urlService.deleteURLByID(id);
+    public ResponseEntity<ResponseObject> DeleteURLByID(@PathVariable("id") String id, HttpServletRequest request) {
+        String auth=request.getHeader("Authorization");
+        ResponseObject res = urlService.deleteURLByID(id,auth);
         return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
     }
 
     @GetMapping("/")
-    public ResponseEntity<ResponseObject> ListURLs() {
-        ResponseObject res = urlService.listURL();
+    public ResponseEntity<ResponseObject> ListURLs( HttpServletRequest request) {
+        String auth=request.getHeader("Authorization");
+        ResponseObject res = urlService.listURL(auth);
         return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
     }
 
@@ -75,14 +80,16 @@ public class URLController {
     }
 
     @PostMapping(value = "/")
-    public ResponseEntity<ResponseObject> PostURL(@RequestBody PostData obj) {
-        ResponseObject res = urlService.createURL(obj.getValue());
+    public ResponseEntity<ResponseObject> PostURL(@RequestBody PostData obj, HttpServletRequest request) {
+        String auth=request.getHeader("Authorization");
+        ResponseObject res = urlService.createURL(obj.getValue(),auth);
         return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
     }
 
     @DeleteMapping("/")
-    public ResponseEntity<ResponseObject> DeleteURL() {
-        ResponseObject res = urlService.deleteURLs();
+    public ResponseEntity<ResponseObject> DeleteURL(HttpServletRequest request) {
+        String auth=request.getHeader("Authorization");
+        ResponseObject res = urlService.deleteURLs(auth);
         return new ResponseEntity<>(res, HttpStatus.resolve(res.getCode()));
     }
 

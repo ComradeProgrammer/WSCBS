@@ -1,10 +1,12 @@
 package win.worldismine.authservice.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import win.worldismine.authservice.dao.URLDao;
 import win.worldismine.authservice.model.URLObject;
 import win.worldismine.authservice.util.ResponseObject;
+import win.worldismine.common.jwt.JWT;
 import win.worldismine.common.util.BusinessException;
 import win.worldismine.authservice.service.URLService;
 
@@ -13,37 +15,47 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Slf4j
 @Service
 public class URLServiceImpl implements URLService {
 
     @Override
-    public ResponseObject getURLByID(String id) {
+    synchronized public ResponseObject getURLByID(String id, String auth) {
         ResponseObject res = new ResponseObject();
-        try {
-            res.setValue(urlDao.getURLByID(id).getUrl());
-            res.setCode(301);
-            res.setMessage("ok");
-        } catch (BusinessException e) {
-            if (e.getMessage().equals(BusinessException.NOT_FOUND)) {
-                res.setCode(404);
-                res.setMessage(e.getMessage());
-            }
+        if (!idToURLObject.containsKey(id)) {
+            res.setCode(404);
+            res.setMessage("Not Found");
+            return res;
         }
+
+        res.setValue(idToURLObject.get(id).getUrl());
+        res.setCode(301);
+        res.setMessage("ok");
+
         return res;
     }
 
     @Override
-    public ResponseObject setURLByID(String id, String url) {
+    synchronized public ResponseObject setURLByID(String id, String url, String auth) {
+
         ResponseObject res = new ResponseObject();
-        // for passing the test script
-        try {
-            urlDao.getURLByID(id);
-        } catch (BusinessException e) {
-            if (e.getMessage().equals(BusinessException.NOT_FOUND)) {
-                res.setCode(404);
-                res.setMessage(e.getMessage());
-                return res;
-            }
+        String username = getUserNameFromAuthHeader(auth);
+        if (username == null) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
+        }
+        if (!idToURLObject.containsKey(id)) {
+            res.setCode(404);
+            res.setMessage("Not Found");
+            return res;
+        }
+        // check authentication
+        URLObject obj = idToURLObject.get(id);
+        if (!obj.getCreator().equals(username)) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
         }
 
         // check url validity
@@ -53,26 +65,24 @@ public class URLServiceImpl implements URLService {
             return res;
         }
 
-        URLObject obj = new URLObject();
+        // change url
         obj.setUrl(url);
         obj.setId(id);
-        try {
-            urlDao.updateURLByID(obj);
-            res.setCode(200);
-            res.setMessage("ok");
+        res.setCode(200);
+        res.setMessage("ok");
 
-        } catch (BusinessException e) {
-            if (e.getMessage().equals(BusinessException.NOT_FOUND)) {
-                res.setCode(404);
-                res.setMessage(e.getMessage());
-            }
-        }
         return res;
     }
 
     @Override
-    public ResponseObject createURL(String url) {
+    synchronized public ResponseObject createURL(String url, String auth) {
         ResponseObject res = new ResponseObject();
+        String username = getUserNameFromAuthHeader(auth);
+        if (username == null) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
+        }
         // check url validity
         if (url == null || !checkURLValidity(url)) {
             res.setCode(400);
@@ -84,8 +94,8 @@ public class URLServiceImpl implements URLService {
         String id = generateIDForString();
         obj.setUrl(url);
         obj.setId(id);
-        urlDao.createURLByID(obj);
-
+        obj.setCreator(username);
+        idToURLObject.put(id, obj);
         res.setCode(201);
         res.setMessage("ok");
         res.setId(id);
@@ -93,33 +103,76 @@ public class URLServiceImpl implements URLService {
     }
 
     @Override
-    public ResponseObject deleteURLByID(String id) {
+    synchronized public ResponseObject deleteURLByID(String id, String auth) {
         ResponseObject res = new ResponseObject();
-        try {
-            urlDao.deleteURLByID(id);
-            res.setCode(204);
-            res.setMessage("ok");
-
-        } catch (BusinessException e) {
-            if (e.getMessage().equals(BusinessException.NOT_FOUND)) {
-                res.setCode(404);
-                res.setMessage(e.getMessage());
-            }
+        String username = getUserNameFromAuthHeader(auth);
+        if (username == null) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
         }
+        if (!idToURLObject.containsKey(id)) {
+            res.setCode(404);
+            res.setMessage("Not Found");
+            return res;
+        }
+        // check authentication
+        URLObject obj = idToURLObject.get(id);
+        if (!obj.getCreator().equals(username)) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
+        }
+
+        idToURLObject.remove(id);
+
+        res.setCode(204);
+        res.setMessage("ok");
         return res;
     }
 
     @Override
-    public ResponseObject listURL() {
+    synchronized public ResponseObject listURL(String auth) {
         ResponseObject res = new ResponseObject();
-        var urlObjects = urlDao.listURL();
-
+        String username = getUserNameFromAuthHeader(auth);
+        if (username == null) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
+        }
         ArrayList<String> urls = new ArrayList<>();
-        for (URLObject urlObject : urlObjects) {
-            urls.add(urlObject.getId());
+        for (URLObject urlObject : idToURLObject.values()) {
+            if (urlObject.getCreator().equals(username)) {
+                urls.add(urlObject.getId());
+            }
         }
         res.setCode(200);
         res.setValues(urls);
+        res.setMessage("ok");
+        return res;
+    }
+
+    synchronized public ResponseObject deleteURLs(String auth) {
+        ResponseObject res = new ResponseObject();
+        String username = getUserNameFromAuthHeader(auth);
+        if (username == null) {
+            res.setCode(403);
+            res.setMessage("Forbidden");
+            return res;
+        }
+
+        ArrayList<String> ids = new ArrayList<>();
+        for (String i : idToURLObject.keySet()) {
+            if (idToURLObject.get(i).getCreator().equals(username)) {
+                ids.add(i);
+            }
+        }
+
+        for (String i : ids) {
+            idToURLObject.remove(i);
+        }
+
+        res.setCode(404);
         res.setMessage("ok");
         return res;
     }
@@ -130,26 +183,40 @@ public class URLServiceImpl implements URLService {
     private String generateIDForString() {
         UUID uuid = UUID.randomUUID();
         ByteBuffer bb = ByteBuffer.wrap(new byte[8]);
-        bb.putLong(uuid.getMostSignificantBits());
-        //bb.putLong(uuid.getLeastSignificantBits());
-        return Base64.getUrlEncoder().encodeToString(Arrays.copyOf(bb.array(),4));
-    }
-
-    public ResponseObject deleteURLs() {
-        urlDao.deleteAllURL();
-        ResponseObject res = new ResponseObject();
-        res.setCode(404);
-        res.setMessage("ok");                                                           
-        return res;
+        bb.putLong(uuid.getLeastSignificantBits());
+        //bb.putLong(uuid.getMostSignificantBits());
+        return Base64.getUrlEncoder().encodeToString(Arrays.copyOf(bb.array(), 4));
     }
 
 
-    synchronized private boolean checkURLValidity(String s) {
+    private boolean checkURLValidity(String s) {
         Matcher matcher = Pattern.compile("^(https?)://[-a-zA-Z0-9;/?:@&=+$,_.!~*'()%#]{1,255}[-a-zA-Z0-9;/?:@&=+$,_.!~*'()#]").matcher(s);
         return matcher.matches();
     }
 
+    private String getUserNameFromAuthHeader(String auth) {
+        if (auth == null) {
+            return null;
+        }
+        String[] segments = auth.split(" ");
+        if (segments.length != 2 || !segments[0].equals("Bearer")) {
+            log.warn("invalid auth header {}", auth);
+            return null;
+        }
+        JWT jwt;
+        try {
+            jwt = JWT.decodeAndVerify(segments[1], publicKeyContent);
+        } catch (Exception e) {
+            log.warn("invalid jwt: {}", e.getMessage());
+            return null;
+        }
+        return jwt.getJwtBody().getName();
 
-    @Autowired
-    private URLDao urlDao;
+    }
+
+
+    @Value("${myjwt.publicKey}")
+    private String publicKeyContent;
+
+    private Map<String, URLObject> idToURLObject = new HashMap<>();
 }
