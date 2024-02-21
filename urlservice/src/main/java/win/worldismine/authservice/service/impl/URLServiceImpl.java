@@ -199,13 +199,18 @@ public class URLServiceImpl implements URLService {
             return null;
         }
         String[] segments = auth.split(" ");
-        if (segments.length != 2 || !segments[0].equals("Bearer")) {
+        String token = null;
+        if (segments.length == 2 && segments[0].equals("Bearer")) {
+            token = segments[1];
+        } else if (segments.length == 1) {
+            token = segments[0];
+        } else {
             log.warn("invalid auth header {}", auth);
             return null;
         }
         JWT jwt;
         try {
-            jwt = JWT.decodeAndVerify(segments[1], publicKeyContent);
+            jwt = JWT.decodeAndVerify(token, publicKeyContent);
         } catch (Exception e) {
             log.warn("invalid jwt: {}", e.getMessage());
             return null;
