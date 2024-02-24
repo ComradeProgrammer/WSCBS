@@ -1,15 +1,21 @@
 # WSCBS
 ## How to run it?
-The program will listen on ::8000
-### Option 1 
-Option 1 (JRE required)
+The auth service will listen on ::8080
+The url service will listen on :8000
+### UrlSerice
 
-There is a jar file called web-0.0.1-SNAPSHOT.jar
 
-Run `java -jar web-0.0.1-SNAPSHOT.jar`
+There is a jar file called urlservice-0.0.1-SNAPSHOT.jar in urlservice/target
 
-### Option 2
-Option2 (JDK(supporting Java 17 or higher) and JRE required): 
+Run `java -jar urlservice-0.0.1-SNAPSHOT.jar --spring.config.location=<config file>`
+you can find the config file in urlservice/src/main/resources/application.properties
 
-Run `./mvnw spring-boot:run`
+### AuthService
+
+The auth service's jar file is in authservice/target
+
+you can find the config file in authservice/src/main/resources/application.properties
+
+use similar command to start this service
+
 

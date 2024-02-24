@@ -1,0 +1,9 @@
+services:
+  auth:
+    image: tjm1999/wscbc-auth:0.1
+    ports:
+      - "8080:8080"
+  url:
+    image: tjm1999/wscbc-url:0.1
+    ports:
+      - "8000:8000"
