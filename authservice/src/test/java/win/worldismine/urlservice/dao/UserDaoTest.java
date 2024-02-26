@@ -3,11 +3,13 @@ package win.worldismine.urlservice.dao;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import win.worldismine.urlservice.entity.User;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class UserDaoTest {
     @Autowired
     UserDao userDao;

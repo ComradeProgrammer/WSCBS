@@ -24,8 +24,8 @@ public interface UserDao {
 
     @Update("""
             CREATE TABLE IF NOT EXISTS users(
-                username VARCHAR PRIMARY KEY NOT NULL UNIQUE    ,
-                password VARCHAR NOT NULL
+                username VARCHAR(256) PRIMARY KEY UNIQUE  NOT NULL,
+                password VARCHAR(256) NOT NULL
             );""")
     void createTableIfNotExist();
 }

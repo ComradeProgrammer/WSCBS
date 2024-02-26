@@ -3,7 +3,39 @@ services:
     image: tjm1999/wscbc-auth:0.1
     ports:
       - "8080:8080"
+    networks:
+      - mynetwork
+    command:
+      - "java" 
+      - "-jar"
+      - "authservice-0.0.1-SNAPSHOT.jar"
+      - --spring.profiles.active=dev  
+      - --spring.datasource.url=jdbc:mysql://db:3306/web
+    depends_on:
+      - db
   url:
     image: tjm1999/wscbc-url:0.1
     ports:
       - "8000:8000"
+    networks:
+      - mynetwork
+    depends_on:
+      - db
+    command: 
+      - "java" 
+      - "-jar"
+      - "urlservice-0.0.1-SNAPSHOT.jar"
+      - --spring.profiles.active=dev  
+      - --spring.datasource.url=jdbc:mysql://db:3306/web
+  db:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - /Users/tjm/Workspace/webcloud/web/mysql_data:/var/lib/mysql  
+    networks:
+      - mynetwork
+networks:
+  mynetwork:

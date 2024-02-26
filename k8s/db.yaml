@@ -1,0 +1,56 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 500m 
+              memory: 1000Mi
+          livenessProbe:
+            tcpSocket:                
+              port: 3306     
+            initialDelaySeconds: 10
+            periodSeconds: 10          
+            timeoutSeconds: 1        
+            successThreshold: 1      
+            failureThreshold: 3
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "123456"
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+---
+ apiVersion: v1
+ kind: Service
+ metadata:
+   name: mysql
+ spec:
+   ports:
+     - name: mysql-port
+       protocol: TCP
+       port: 3306
+       targetPort: 3306
+       nodePort: 31306
+   type: NodePort
+   selector:
+     app: mysql
+
